@@ -5,23 +5,28 @@ import os
 import time
 from subprocess import call
 
-
+# The list of SDcard Vendor and Product IDs - these will be used to check you are writing to the correct devices
 VENDOR_PRODUCT_ID = "0bda:0109"
 DEV_NAME_LIST = []
 PARTITION_NAME_LIST = []
 
+# Check am image file was given
+# TODO: Add checks to confirm it is an image file
 if (len(sys.argv) == 2):
 	input_file = os.path.abspath("".join(sys.argv[1:]))
 
+	# Getting the number of USB devices connected grepping for the correct IDs provided above
+	# TODO: Make the IDs in to a list so we can use a variety of a sd card readers
 	lsusb_proc = subprocess.Popen(["lsusb | grep 0bda:0109 | wc -l"], shell=True, stdout=subprocess.PIPE)
 	data, err = lsusb_proc.communicate()
 	usb_devices = int(data)
 
+	# Get the dev paths of each connected drive
 	lsblk_proc = subprocess.Popen(["lsblk -ln | awk '{print $1}'"], shell=True, stdout=subprocess.PIPE)
 
 	sdcard_count = 0
 	for line in lsblk_proc.stdout:
-		# line = proc.stdout
+		# Check that it is the sd card readers we want by cycling through each drive and checking the IDs
 		line = line.strip()
 		udevadm_proc = subprocess.Popen(["udevadm info -q all -n " + line + " | grep \"0109\""], shell=True, stdout=subprocess.PIPE)
 		for dev in udevadm_proc.stdout:
