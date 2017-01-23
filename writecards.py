@@ -8,6 +8,7 @@ from subprocess import call
 
 VENDOR_PRODUCT_ID = "0bda:0109"
 DEV_NAME_LIST = []
+PARTITION_NAME_LIST = []
 
 if (len(sys.argv) == 2):
 	input_file = os.path.abspath("".join(sys.argv[1:]))
@@ -22,13 +23,16 @@ if (len(sys.argv) == 2):
 	for line in lsblk_proc.stdout:
 		# line = proc.stdout
 		line = line.strip()
-		m = re.search(r'\d+$', line)
-		if m is None:
-			udevadm_proc = subprocess.Popen(["udevadm info -q all -n " + line + " | grep \"0109\""], shell=True, stdout=subprocess.PIPE)
-			for dev in udevadm_proc.stdout:
+		udevadm_proc = subprocess.Popen(["udevadm info -q all -n " + line + " | grep \"0109\""], shell=True, stdout=subprocess.PIPE)
+		for dev in udevadm_proc.stdout:
+			m = re.search(r'\d+$', line)
+			if m is None:
+				# print line
 				DEV_NAME_LIST.append(line)
 				sdcard_count = sdcard_count + 1
-				# subprocess.call(["umount "])
+			else:
+				# print line
+				umount_proc = subprocess.call(["sudo umount /dev/" + line], shell=True, stdout=subprocess.PIPE)
 
 	print "Number of sdcard readers connected = " + str(usb_devices)
 	print "Number of sdcards inserted = " + str(sdcard_count)
@@ -39,9 +43,9 @@ if (len(sys.argv) == 2):
 		of_argument = ""
 		for device in DEV_NAME_LIST:
 			of_argument = of_argument + "of=/dev/" + device + " "
-		command = "sudo dcfldd if=" + input_file + " statusinterval=64 bs=1M sizeprobe=if " + of_argument
+		command = "sudo dcfldd if=" + input_file + " statusinterval=2 bs=1M sizeprobe=if " + of_argument
 		print command
-		dd_command = subprocess.call([command], shell=True)
+		dd_command = subprocess.call([command], shell=True, bufsize=-1)
 		# dd_command = subprocess.call(["sudo dcfldd if=/home/icrs/Desktop/shrunkimage.img statusinterval=64 bs=1M sizeprobe=if of=/dev/sdb"], shell=True)
 		# for line in iter(dd_command.stdout.readline(), ""):
 			# print line
